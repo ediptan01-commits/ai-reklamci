@@ -264,20 +264,97 @@ imageInput.addEventListener("change", function () {
 
 });
 
-
-function createAd() {
-
-  const product = document.getElementById("productName").value;
-  const price = document.getElementById("price").value;
-  const description = document.getElementById("description").value;
-  const target = document.getElementById("target").value;
+async function createAd() {
+  const product = document.getElementById("productName").value.trim();
+  const price = document.getElementById("price").value.trim();
+  const description = document.getElementById("description").value.trim();
+  const target = document.getElementById("target").value.trim();
   const platform = document.getElementById("platform").value;
   const style = document.getElementById("style").value;
 
   if (!product || !description) {
-    alert("Lütfen ürün adını ve açıklamasını gir.");
+    alert("Lütfen ürün/hizmet adını ve açıklamasını gir.");
     return;
   }
+
+  const loading = document.getElementById("loading");
+  const result = document.getElementById("result");
+
+  loading.style.display = "block";
+  result.style.display = "none";
+
+  try {
+    const response = await fetch(
+      "https://ai-reklamci.vercel.app/api/generate",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          productName: product,
+          price: price,
+          description: description,
+          targetCustomer: target,
+          platform: platform,
+          style: style
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.error || "Reklam oluşturulamadı."
+      );
+    }
+
+    const ad = data.result;
+
+    document.getElementById("resultPlatform").textContent =
+      platform;
+
+    document.getElementById("resultsStyle").textContent =
+      style;
+
+    document.getElementById("title").textContent =
+      ad.baslik || "";
+
+    document.getElementById("slogan").textContent =
+      ad.slogan || "";
+
+    document.getElementById("script").textContent =
+      ad.senaryo || "";
+
+    document.getElementById("voiceover").textContent =
+      ad.seslendirme || "";
+
+    document.getElementById("caption").textContent =
+      ad.aciklama || "";
+
+    document.getElementById("hashtags").textContent =
+      Array.isArray(ad.hashtagler)
+        ? ad.hashtagler.join(" ")
+        : "";
+
+    document.getElementById("callToAction").textContent =
+      ad.cagri || "";
+
+    result.style.display = "block";
+
+  } catch (error) {
+    console.error(error);
+
+    alert(
+      "Reklam oluşturulurken hata oluştu:\n\n" +
+      error.message
+    );
+
+  } finally {
+    loading.style.display = "none";
+  }
+}
 
   document.getElementById("loading").style.display = "block";
 
