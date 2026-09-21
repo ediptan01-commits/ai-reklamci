@@ -1,15 +1,21 @@
 export default async function handler(req) {
+  // Sadece POST
   if (req.method !== "POST") {
     return new Response(
-      JSON.stringify({ error: "Sadece POST isteği kabul edilir." }),
+      JSON.stringify({
+        error: "Sadece POST isteği kabul edilir."
+      }),
       {
         status: 405,
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Content-Type": "application/json"
+        }
       }
     );
   }
 
   try {
+    // Gelen veriyi oku
     const body = await req.json();
 
     const {
@@ -21,69 +27,84 @@ export default async function handler(req) {
       style
     } = body;
 
+    // Zorunlu alan kontrolü
     if (!productName || !description) {
       return new Response(
         JSON.stringify({
+          success: false,
           error: "Ürün/hizmet adı ve açıklaması zorunludur."
         }),
         {
           status: 400,
-          headers: { "Content-Type": "application/json" }
+          headers: {
+            "Content-Type": "application/json"
+          }
         }
       );
     }
 
+    // API anahtarını Vercel Environment Variables'dan al
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
       return new Response(
         JSON.stringify({
+          success: false,
           error: "OPENAI_API_KEY tanımlanmamış."
         }),
         {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: {
+            "Content-Type": "application/json"
+          }
         }
       );
     }
 
+    // Reklam uzmanı promptu
     const prompt = `
 Sen profesyonel bir dijital reklam ajansında çalışan yaratıcı reklam uzmanısın.
 
-Aşağıdaki ürün/hizmet için etkili bir sosyal medya reklam paketi hazırla.
+Aşağıdaki ürün veya hizmet için profesyonel bir sosyal medya reklam paketi hazırla.
 
-Ürün/Hizmet:
+ÜRÜN / HİZMET:
 ${productName}
 
-Fiyat:
+FİYAT:
 ${price || "Belirtilmedi"}
 
-Ürün/Hizmet açıklaması:
+AÇIKLAMA:
 ${description}
 
-Hedef müşteri:
+HEDEF MÜŞTERİ:
 ${targetCustomer || "Genel müşteri"}
 
-Reklam platformu:
+PLATFORM:
 ${platform || "Instagram Reels"}
 
-Reklam tarzı:
+REKLAM TARZI:
 ${style || "Dikkat çekici"}
 
 Şunları Türkçe olarak üret:
 
-1. Reklam başlığı
+1. Güçlü reklam başlığı
 2. Kısa ve akılda kalıcı slogan
 3. Yaklaşık 20 saniyelik video senaryosu
 4. Seslendirme metni
 5. Sosyal medya paylaşım açıklaması
 6. 8 adet uygun hashtag
-7. Reklamda kullanılabilecek güçlü çağrı cümlesi
+7. Güçlü çağrı cümlesi
 
-Metinler satış odaklı ama doğal olsun.
-Abartılı veya doğrulanmamış iddialar üretme.
+Kurallar:
+- Satış odaklı ama doğal ol.
+- Profesyonel reklam dili kullan.
+- Hedef müşteriye uygun yaz.
+- Abartılı veya doğrulanmamış iddialar üretme.
+- Hashtagleri # ile başlat.
+- Cevabı SADECE JSON olarak ver.
+- JSON dışında açıklama yazma.
 
-Cevabı SADECE aşağıdaki JSON formatında ver:
+JSON FORMAT:
 
 {
   "baslik": "",
@@ -96,14 +117,17 @@ Cevabı SADECE aşağıdaki JSON formatında ver:
 }
 `;
 
-    const response = await fetch(
+    // OpenAI Responses API
+    const openaiResponse = await fetch(
       "https://api.openai.com/v1/responses",
       {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${apiKey}`
         },
+
         body: JSON.stringify({
           model: "gpt-5.6-luna",
           input: prompt,
@@ -112,49 +136,63 @@ Cevabı SADECE aşağıdaki JSON formatında ver:
       }
     );
 
-    if (!response.ok) {
-      const errorText = await response.text();
+    // OpenAI hata kontrolü
+    if (!openaiResponse.ok) {
+      const errorText = await openaiResponse.text();
 
       return new Response(
         JSON.stringify({
-          error: "OpenAI API hatası",
+          success: false,
+          error: "OpenAI API hatası.",
           details: errorText
         }),
         {
-          status: response.status,
-          headers: { "Content-Type": "application/json" }
+          status: openaiResponse.status,
+          headers: {
+            "Content-Type": "application/json"
+          }
         }
       );
     }
 
-    const data = await response.json();
+    // OpenAI cevabını JSON olarak oku
+    const data = await openaiResponse.json();
 
+    // Responses API'den metni çıkar
     let text = "";
 
     if (typeof data.output_text === "string") {
       text = data.output_text;
     } else if (Array.isArray(data.output)) {
       for (const item of data.output) {
-        if (Array.isArray(item.content)) {
-          for (const content of item.content) {
-            if (typeof content.text === "string") {
-              text += content.text;
-            }
+        if (!Array.isArray(item.content)) {
+          continue;
+        }
+
+        for (const content of item.content) {
+          if (typeof content.text === "string") {
+            text += content.text;
           }
         }
       }
     }
 
+    text = text.trim();
+
+    // Markdown JSON işaretlerini temizle
     text = text
       .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
       .replace(/\s*```$/i, "")
       .trim();
 
+    // JSON'u parse et
     let result;
 
     try {
       result = JSON.parse(text);
-    } catch {
+    } catch (parseError) {
+      // JSON parse edilemezse yine reklamı kaybetme
       result = {
         baslik: "Reklamınız hazır",
         slogan: "",
@@ -166,10 +204,11 @@ Cevabı SADECE aşağıdaki JSON formatında ver:
       };
     }
 
+    // Başarılı cevap
     return new Response(
       JSON.stringify({
         success: true,
-        result
+        result: result
       }),
       {
         status: 200,
@@ -180,14 +219,20 @@ Cevabı SADECE aşağıdaki JSON formatında ver:
     );
 
   } catch (error) {
+
+    console.error("SERVER ERROR:", error);
+
     return new Response(
       JSON.stringify({
-        error: "Sunucu hatası",
+        success: false,
+        error: "Sunucu hatası.",
         details: error.message
       }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Content-Type": "application/json"
+        }
       }
     );
   }
