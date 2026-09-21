@@ -348,82 +348,7 @@ async function createAd() {
 }
 
 
-function createVideo() {
-  const product = document.getElementById("productName").value.trim();
-  const description = document.getElementById("description").value.trim();
-  const price = document.getElementById("price").value.trim();
 
-  const videoWindow = window.open("", "_blank");
-
-  if (!videoWindow) {
-    alert("Video ekranını açmak için açılır pencereye izin ver.");
-    return;
-  }
-
-  videoWindow.document.write(`
-    <!DOCTYPE html>
-    <html lang="tr">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-      <title>AI Reklamcı - Video</title>
-
-      <style>
-        * {
-          box-sizing: border-box;
-        }
-
-        body {
-          margin: 0;
-          background: #000;
-          color: white;
-          font-family: Arial, sans-serif;
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 20px;
-        }
-
-        .video {
-          width: min(100%, 420px);
-          aspect-ratio: 9 / 16;
-          background: linear-gradient(
-            160deg,
-            #111827,
-            #312e81,
-            #000
-          );
-          border-radius: 22px;
-          position: relative;
-          overflow: hidden;
-          box-shadow: 0 0 40px rgba(99,102,241,.45);
-          display: flex;
-          flex-direction: column;
-          justify-content: flex-end;
-          padding: 28px;
-        }
-
-        .badge {
-          position: absolute;
-          top: 25px;
-          left: 25px;
-          background: rgba(255,255,255,.15);
-          padding: 8px 13px;
-          border-radius: 20px;
-          font-size: 13px;
-        }
-
-        h1 {
-          font-size: 30px;
-          margin: 0 0 12px;
-        }
-
-        p {
-          font-size: 17px;
-          line-height: 1.5;
           margin: 7px 0;
         }
 
@@ -493,7 +418,520 @@ function createVideo() {
   `);
 
   videoWindow.document.close();
+function createVideo() {
+  const product = document.getElementById("productName").value.trim();
+  const description = document.getElementById("description").value.trim();
+  const price = document.getElementById("price").value.trim();
 
+  const imageInput = document.getElementById("productImage");
+
+  let imageUrl = "";
+
+  if (imageInput && imageInput.files && imageInput.files[0]) {
+    imageUrl = URL.createObjectURL(imageInput.files[0]);
+  }
+
+  const videoWindow = window.open("", "_blank");
+
+  if (!videoWindow) {
+    alert("Video ekranını açmak için açılır pencereye izin ver.");
+    return;
+  }
+
+  videoWindow.document.write(`
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width,
+  initial-scale=1.0,
+  maximum-scale=1.0,
+  user-scalable=no"
+>
+
+<title>AI Reklamcı</title>
+
+<style>
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  font-family: Arial, sans-serif;
+}
+
+.ad {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 50% 25%,
+      #4f46e5 0%,
+      #312e81 30%,
+      #111827 65%,
+      #000 100%
+    );
+
+  color: white;
+}
+
+/* Işık efekti */
+
+.glow {
+  position: absolute;
+  width: 280px;
+  height: 280px;
+
+  background: rgba(99,102,241,.45);
+
+  border-radius: 50%;
+
+  filter: blur(70px);
+
+  top: 10%;
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  animation: glow 4s infinite alternate;
+}
+
+@keyframes glow {
+
+  from {
+    transform:
+      translateX(-50%)
+      scale(1);
+  }
+
+  to {
+    transform:
+      translateX(-50%)
+      scale(1.3);
+  }
+
+}
+
+/* Üst logo */
+
+.logo {
+
+  position: absolute;
+
+  top: 30px;
+  left: 25px;
+
+  background:
+    rgba(255,255,255,.15);
+
+  border:
+    1px solid
+    rgba(255,255,255,.25);
+
+  padding: 9px 14px;
+
+  border-radius: 30px;
+
+  font-size: 12px;
+
+  font-weight: bold;
+
+  backdrop-filter: blur(10px);
+
+}
+
+/* Ürün görseli */
+
+.product-image {
+
+  position: absolute;
+
+  top: 14%;
+
+  left: 50%;
+
+  transform:
+    translateX(-50%)
+    scale(.92);
+
+  width: 78vw;
+
+  max-width: 380px;
+
+  height: 42vh;
+
+  object-fit: contain;
+
+  filter:
+    drop-shadow(
+      0 20px 35px
+      rgba(0,0,0,.55)
+    );
+
+  animation:
+    productIn 1s ease forwards,
+    floating 4s
+    ease-in-out
+    1s infinite alternate;
+
+}
+
+@keyframes productIn {
+
+  from {
+    opacity: 0;
+    transform:
+      translateX(-50%)
+      scale(.65);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translateX(-50%)
+      scale(.92);
+  }
+
+}
+
+@keyframes floating {
+
+  from {
+    margin-top: 0;
+  }
+
+  to {
+    margin-top: -15px;
+  }
+
+}
+
+/* Görsel yoksa alan */
+
+.no-image {
+
+  position: absolute;
+
+  top: 20%;
+
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  width: 180px;
+  height: 180px;
+
+  border-radius: 30px;
+
+  background:
+    rgba(255,255,255,.1);
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  font-size: 55px;
+
+}
+
+/* Alt bölüm */
+
+.content {
+
+  position: absolute;
+
+  left: 0;
+  right: 0;
+
+  bottom: 0;
+
+  padding:
+    35px 25px
+    calc(30px + env(safe-area-inset-bottom))
+    25px;
+
+  background:
+    linear-gradient(
+      transparent,
+      rgba(0,0,0,.92) 25%
+    );
+
+}
+
+/* Ürün adı */
+
+.product-name {
+
+  font-size:
+    clamp(30px, 8vw, 48px);
+
+  font-weight: 800;
+
+  line-height: 1.05;
+
+  margin-bottom: 12px;
+
+  animation:
+    textIn .8s ease .3s both;
+
+}
+
+/* Açıklama */
+
+.description {
+
+  font-size:
+    clamp(15px, 4vw, 19px);
+
+  line-height: 1.45;
+
+  color:
+    rgba(255,255,255,.88);
+
+  max-width: 600px;
+
+  animation:
+    textIn .8s ease .5s both;
+
+}
+
+@keyframes textIn {
+
+  from {
+
+    opacity: 0;
+
+    transform:
+      translateY(20px);
+
+  }
+
+  to {
+
+    opacity: 1;
+
+    transform:
+      translateY(0);
+
+  }
+
+}
+
+/* Fiyat */
+
+.price {
+
+  font-size:
+    clamp(25px, 7vw, 38px);
+
+  font-weight: 800;
+
+  margin-top: 15px;
+
+  animation:
+    textIn .8s ease .7s both;
+
+}
+
+/* Buton */
+
+.cta {
+
+  width: 100%;
+
+  margin-top: 20px;
+
+  padding: 17px;
+
+  background: white;
+
+  color: #111827;
+
+  border-radius: 15px;
+
+  text-align: center;
+
+  font-size: 17px;
+
+  font-weight: 800;
+
+  box-shadow:
+    0 10px 30px
+    rgba(0,0,0,.3);
+
+  animation:
+    buttonIn .8s ease .9s both;
+
+}
+
+@keyframes buttonIn {
+
+  from {
+
+    opacity: 0;
+
+    transform:
+      translateY(30px)
+      scale(.95);
+
+  }
+
+  to {
+
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+
+  }
+
+}
+
+/* Süre çizgisi */
+
+.progress {
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  height: 4px;
+
+  width: 0%;
+
+  background: white;
+
+  animation:
+    progress 20s linear forwards;
+
+}
+
+@keyframes progress {
+
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: 100%;
+  }
+
+}
+
+/* Alt marka */
+
+.brand {
+
+  position: absolute;
+
+  bottom: 8px;
+
+  left: 0;
+  right: 0;
+
+  text-align: center;
+
+  font-size: 10px;
+
+  color:
+    rgba(255,255,255,.5);
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="ad">
+
+  <div class="progress"></div>
+
+  <div class="glow"></div>
+
+  <div class="logo">
+    AI REKLAMCI
+  </div>
+
+  ${
+    imageUrl
+      ? `
+      <img
+        class="product-image"
+        src="${imageUrl}"
+      >
+      `
+      : `
+      <div class="no-image">
+        ✦
+      </div>
+      `
+  }
+
+  <div class="content">
+
+    <div class="product-name">
+      ${product || "Ürününüz"}
+    </div>
+
+    <div class="description">
+      ${
+        description ||
+        "Ürününüzü şimdi keşfedin."
+      }
+    </div>
+
+    ${
+      price
+        ? `
+        <div class="price">
+          ${price}
+        </div>
+        `
+        : ""
+    }
+
+    <div class="cta">
+      ŞİMDİ KEŞFET
+    </div>
+
+  </div>
+
+  <div class="brand">
+    AI Reklamcı • Yapay zekâ ile reklamınızı oluşturun
+  </div>
+
+</div>
+
+</body>
+
+</html>
+  `);
+
+  videoWindow.document.close();
+}
 }
 
 </script>
