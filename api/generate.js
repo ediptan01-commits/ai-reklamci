@@ -1,23 +1,12 @@
-export default async function handler(req) {
-  // Sadece POST
+export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return new Response(
-      JSON.stringify({
-        error: "Sadece POST isteği kabul edilir."
-      }),
-      {
-        status: 405,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
-    );
+    return res.status(405).json({
+      success: false,
+      error: "Sadece POST isteği kabul edilir."
+    });
   }
 
   try {
-    // Gelen veriyi oku
-    const body = await req.json();
-
     const {
       productName,
       price,
@@ -25,86 +14,47 @@ export default async function handler(req) {
       targetCustomer,
       platform,
       style
-    } = body;
+    } = req.body || {};
 
-    // Zorunlu alan kontrolü
     if (!productName || !description) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Ürün/hizmet adı ve açıklaması zorunludur."
-        }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json"
-          }
-        }
-      );
+      return res.status(400).json({
+        success: false,
+        error: "Ürün/hizmet adı ve açıklaması zorunludur."
+      });
     }
 
-    // API anahtarını Vercel Environment Variables'dan al
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "OPENAI_API_KEY tanımlanmamış."
-        }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json"
-          }
-        }
-      );
+      return res.status(500).json({
+        success: false,
+        error: "OPENAI_API_KEY Vercel'de bulunamadı."
+      });
     }
 
-    // Reklam uzmanı promptu
     const prompt = `
 Sen profesyonel bir dijital reklam ajansında çalışan yaratıcı reklam uzmanısın.
 
-Aşağıdaki ürün veya hizmet için profesyonel bir sosyal medya reklam paketi hazırla.
+Ürün/Hizmet: ${productName}
+Fiyat: ${price || "Belirtilmedi"}
+Açıklama: ${description}
+Hedef müşteri: ${targetCustomer || "Genel müşteri"}
+Platform: ${platform || "Instagram Reels"}
+Reklam tarzı: ${style || "Dikkat çekici"}
 
-ÜRÜN / HİZMET:
-${productName}
+Türkçe olarak şunları oluştur:
 
-FİYAT:
-${price || "Belirtilmedi"}
+- Reklam başlığı
+- Slogan
+- Yaklaşık 20 saniyelik video senaryosu
+- Seslendirme metni
+- Sosyal medya açıklaması
+- 8 hashtag
+- Güçlü çağrı cümlesi
 
-AÇIKLAMA:
-${description}
+Abartılı veya doğrulanmamış iddialar kullanma.
 
-HEDEF MÜŞTERİ:
-${targetCustomer || "Genel müşteri"}
-
-PLATFORM:
-${platform || "Instagram Reels"}
-
-REKLAM TARZI:
-${style || "Dikkat çekici"}
-
-Şunları Türkçe olarak üret:
-
-1. Güçlü reklam başlığı
-2. Kısa ve akılda kalıcı slogan
-3. Yaklaşık 20 saniyelik video senaryosu
-4. Seslendirme metni
-5. Sosyal medya paylaşım açıklaması
-6. 8 adet uygun hashtag
-7. Güçlü çağrı cümlesi
-
-Kurallar:
-- Satış odaklı ama doğal ol.
-- Profesyonel reklam dili kullan.
-- Hedef müşteriye uygun yaz.
-- Abartılı veya doğrulanmamış iddialar üretme.
-- Hashtagleri # ile başlat.
-- Cevabı SADECE JSON olarak ver.
-- JSON dışında açıklama yazma.
-
-JSON FORMAT:
+SADECE şu JSON formatında cevap ver:
 
 {
   "baslik": "",
@@ -117,17 +67,14 @@ JSON FORMAT:
 }
 `;
 
-    // OpenAI Responses API
     const openaiResponse = await fetch(
       "https://api.openai.com/v1/responses",
       {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${apiKey}`
         },
-
         body: JSON.stringify({
           model: "gpt-5.6-luna",
           input: prompt,
@@ -136,38 +83,36 @@ JSON FORMAT:
       }
     );
 
-    // OpenAI hata kontrolü
-    if (!openaiResponse.ok) {
-      const errorText = await openaiResponse.text();
+    const responseText = await openaiResponse.text();
 
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "OpenAI API hatası.",
-          details: errorText
-        }),
-        {
-          status: openaiResponse.status,
-          headers: {
-            "Content-Type": "application/json"
-          }
-        }
-      );
+    if (!openaiResponse.ok) {
+      return res.status(openaiResponse.status).json({
+        success: false,
+        error: "OpenAI API hatası.",
+        details: responseText
+      });
     }
 
-    // OpenAI cevabını JSON olarak oku
-    const data = await openaiResponse.json();
+    let data;
 
-    // Responses API'den metni çıkar
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      return res.status(500).json({
+        success: false,
+        error: "OpenAI cevabı okunamadı."
+      });
+    }
+
     let text = "";
 
     if (typeof data.output_text === "string") {
       text = data.output_text;
-    } else if (Array.isArray(data.output)) {
+    }
+
+    if (!text && Array.isArray(data.output)) {
       for (const item of data.output) {
-        if (!Array.isArray(item.content)) {
-          continue;
-        }
+        if (!Array.isArray(item.content)) continue;
 
         for (const content of item.content) {
           if (typeof content.text === "string") {
@@ -177,22 +122,17 @@ JSON FORMAT:
       }
     }
 
-    text = text.trim();
-
-    // Markdown JSON işaretlerini temizle
     text = text
       .replace(/^```json\s*/i, "")
       .replace(/^```\s*/i, "")
       .replace(/\s*```$/i, "")
       .trim();
 
-    // JSON'u parse et
     let result;
 
     try {
       result = JSON.parse(text);
-    } catch (parseError) {
-      // JSON parse edilemezse yine reklamı kaybetme
+    } catch {
       result = {
         baslik: "Reklamınız hazır",
         slogan: "",
@@ -204,36 +144,18 @@ JSON FORMAT:
       };
     }
 
-    // Başarılı cevap
-    return new Response(
-      JSON.stringify({
-        success: true,
-        result: result
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
-    );
+    return res.status(200).json({
+      success: true,
+      result
+    });
 
   } catch (error) {
+    console.error(error);
 
-    console.error("SERVER ERROR:", error);
-
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: "Sunucu hatası.",
-        details: error.message
-      }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
-    );
+    return res.status(500).json({
+      success: false,
+      error: "Sunucu hatası.",
+      details: error.message
+    });
   }
 }
