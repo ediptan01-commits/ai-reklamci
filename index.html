@@ -312,11 +312,8 @@ async function createAd() {
 
     const ad = data.result;
 
-    document.getElementById("resultPlatform").textContent =
-      platform;
-
-    document.getElementById("resultsStyle").textContent =
-      style;
+    document.getElementById("resultPlatform").textContent = platform;
+    document.getElementById("resultStyle").textContent = style;
 
     document.getElementById("title").textContent =
       ad.baslik || "";
@@ -327,9 +324,6 @@ async function createAd() {
     document.getElementById("script").textContent =
       ad.senaryo || "";
 
-    document.getElementById("voiceover").textContent =
-      ad.seslendirme || "";
-
     document.getElementById("caption").textContent =
       ad.aciklama || "";
 
@@ -337,9 +331,6 @@ async function createAd() {
       Array.isArray(ad.hashtagler)
         ? ad.hashtagler.join(" ")
         : "";
-
-    document.getElementById("callToAction").textContent =
-      ad.cagri || "";
 
     result.style.display = "block";
 
@@ -354,62 +345,6 @@ async function createAd() {
   } finally {
     loading.style.display = "none";
   }
-}
-
-  document.getElementById("loading").style.display = "block";
-
-  setTimeout(() => {
-
-    document.getElementById("loading").style.display = "none";
-    document.getElementById("result").style.display = "block";
-
-    document.getElementById("resultPlatform").textContent = platform;
-    document.getElementById("resultStyle").textContent = style;
-
-    document.getElementById("title").textContent =
-      `${product} – Şimdi Keşfet!`;
-
-    document.getElementById("slogan").textContent =
-      `${product} ile farkı şimdi hisset.`;
-
-    document.getElementById("script").textContent =
-`[0-3 saniye]
-Dikkat çekici ürün görüntüsü.
-Ekranda: "${product}"
-
-[3-8 saniye]
-${description}
-
-[8-13 saniye]
-Hedef müşteriye yönelik güçlü kullanım görüntüleri.
-
-[13-17 saniye]
-${price ? "Sadece " + price : "Özel fırsatlarla"}.
-
-[17-20 saniye]
-"Şimdi keşfet ve fırsatı kaçırma!"`;
-
-    document.getElementById("caption").textContent =
-      `${product} için yeni reklamımız yayında!
-
-${description}
-
-${price ? "Fiyat: " + price : ""}
-
-Hemen keşfet.`;
-
-    document.getElementById("hashtags").textContent =
-      `#${product.replaceAll(" ", "")}
-#reklam
-#kampanya
-#alışveriş
-#keşfet
-#fırsat`;
-
-    document.getElementById("result")
-      .scrollIntoView({ behavior: "smooth" });
-
-  }, 1200);
 }
 
 
