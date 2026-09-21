@@ -349,8 +349,151 @@ async function createAd() {
 
 
 function createVideo() {
+  const product = document.getElementById("productName").value.trim();
+  const description = document.getElementById("description").value.trim();
+  const price = document.getElementById("price").value.trim();
 
-  alert(
+  const videoWindow = window.open("", "_blank");
+
+  if (!videoWindow) {
+    alert("Video ekranını açmak için açılır pencereye izin ver.");
+    return;
+  }
+
+  videoWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="tr">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+      <title>AI Reklamcı - Video</title>
+
+      <style>
+        * {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 0;
+          background: #000;
+          color: white;
+          font-family: Arial, sans-serif;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+        }
+
+        .video {
+          width: min(100%, 420px);
+          aspect-ratio: 9 / 16;
+          background: linear-gradient(
+            160deg,
+            #111827,
+            #312e81,
+            #000
+          );
+          border-radius: 22px;
+          position: relative;
+          overflow: hidden;
+          box-shadow: 0 0 40px rgba(99,102,241,.45);
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          padding: 28px;
+        }
+
+        .badge {
+          position: absolute;
+          top: 25px;
+          left: 25px;
+          background: rgba(255,255,255,.15);
+          padding: 8px 13px;
+          border-radius: 20px;
+          font-size: 13px;
+        }
+
+        h1 {
+          font-size: 30px;
+          margin: 0 0 12px;
+        }
+
+        p {
+          font-size: 17px;
+          line-height: 1.5;
+          margin: 7px 0;
+        }
+
+        .price {
+          font-size: 24px;
+          font-weight: bold;
+          margin-top: 15px;
+        }
+
+        .cta {
+          margin-top: 18px;
+          background: white;
+          color: #111827;
+          padding: 14px;
+          text-align: center;
+          border-radius: 12px;
+          font-weight: bold;
+        }
+
+        .test {
+          margin-top: 15px;
+          color: #aaa;
+          font-size: 12px;
+          text-align: center;
+        }
+      </style>
+    </head>
+
+    <body>
+
+      <div class="video">
+
+        <div class="badge">
+          AI REKLAMCI
+        </div>
+
+        <div>
+
+          <h1>
+            ${product || "Ürününüz"}
+          </h1>
+
+          <p>
+            ${description || "Ürününüzü şimdi keşfedin."}
+          </p>
+
+          ${
+            price
+              ? `<div class="price">${price}</div>`
+              : ""
+          }
+
+          <div class="cta">
+            ŞİMDİ KEŞFET
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="test">
+        Ücretsiz video prototipi • AI Reklamcı
+      </div>
+
+    </body>
+    </html>
+  `);
+
+  videoWindow.document.close();
+}
     "Video üretim sistemi bir sonraki aşamada AI video motoruna bağlanacak."
   );
 
